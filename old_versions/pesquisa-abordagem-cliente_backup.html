@@ -1,0 +1,476 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Abordagem de Cliente</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --brand-primary:#da291c; --brand-primary-lightest:#ffe3e3; --brand-primary-dark:#b41e13;
+  --neutral-darkest:#1f1d1d; --neutral-dark:#525252; --neutral-medium:#dbdbdb; --neutral-light:#f8f8f8; --white:#fff;
+  --highlight-medium:#ffc722;
+  --success-light:#ddf9ed; --success-dark:#006b4f;
+  --danger-dark:#b84d01;
+  --font-base:"Roboto",Arial,sans-serif;
+  --font-highlight:"AMX","Roboto",Arial,sans-serif;
+  --r-sm:12px; --r-card:16px; --r-pill:500px;
+  --s-xxs:8px; --s-xs:12px; --s-sm:16px; --s-md:24px; --s-lg:32px; --s-xl:48px;
+  --opacity-medium:.32;
+  --input-border:rgba(82,82,82,.8); /* cinza (#525252) a 80% */
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;font-family:var(--font-base);font-size:16px;font-weight:400;color:var(--neutral-darkest);background:var(--white)}
+
+/* Header (faixa vermelha, marca em branco à esquerda) */
+.site-header{background:var(--brand-primary);height:70px;display:flex;align-items:center}
+.site-header__in{width:100%;max-width:880px;margin:0 auto;padding:0 var(--s-md);display:flex;align-items:center;gap:var(--s-sm)}
+.brand{display:inline-flex;align-items:center;text-decoration:none}
+.brand__logo{display:block;width:auto;height:32px;max-width:160px;object-fit:contain}
+
+.layout{max-width:880px;margin:0 auto;padding:var(--s-lg) var(--s-md) var(--s-xl)}
+.card h2:focus{outline:none}
+
+/* Conteúdo */
+h1{font:700 28px/normal var(--font-highlight);margin:0 0 var(--s-xxs)}
+.page-head{display:flex;align-items:center;justify-content:space-between;gap:var(--s-sm);flex-wrap:wrap;margin-bottom:var(--s-md)}
+.lead{margin:0;color:var(--neutral-dark);flex:1 1 280px}
+.field.date-field{flex:1 1 100%;width:100%;margin-left:0;display:flex;align-items:center;gap:12px;min-height:46px;padding:0 12px;border:1px solid var(--neutral-medium);border-radius:var(--r-sm);background:var(--neutral-light)}
+.captcha{max-width:420px;margin:0 auto var(--s-md)}
+.captcha__panel{display:grid;gap:var(--s-xs);padding:var(--s-sm);background:#eee;border:1px solid var(--neutral-medium);border-radius:var(--r-sm)}
+.captcha__title{margin:0;font:500 20px/1.3 var(--font-highlight)}
+.captcha__image{display:block;width:100%;height:auto;aspect-ratio:320/96;background:#111;border:1px solid #777;border-radius:4px}
+.captcha__refresh{display:inline-flex;align-items:center;justify-self:center;gap:6px;padding:4px 8px;border:0;background:transparent;color:var(--neutral-darkest);font:500 14px var(--font-base);text-decoration:underline;cursor:pointer}
+.captcha__refresh svg{width:18px;height:18px;fill:currentColor}
+.captcha__label{font-weight:500}
+.captcha__input{width:100%;height:46px;padding:10px 14px;border:1px solid var(--input-border);border-radius:var(--r-sm);background:var(--white);font:500 16px var(--font-base);text-transform:uppercase}
+.captcha__input:focus{outline:2.4px solid #000;outline-offset:1px}
+.captcha__input[aria-invalid="true"]{border-color:var(--danger-dark)}
+.captcha__feedback{margin:0;color:var(--danger-dark);font-size:14px}
+.captcha__actions{display:flex;justify-content:flex-end}
+.secure{display:flex;justify-content:space-between;gap:var(--s-sm);flex-wrap:wrap;font-size:12px;font-weight:500;margin-bottom:var(--s-xs)}
+.card{background:var(--neutral-light);border:.8px solid var(--neutral-medium);border-radius:var(--r-card);padding:var(--s-md);box-shadow:rgba(0,0,0,.2) 0 4px 8px -4px;margin-bottom:var(--s-md)}
+.card h2{font:500 20px/normal var(--font-highlight);margin:0 0 var(--s-sm);padding-bottom:var(--s-xs);border-bottom:.8px solid var(--neutral-medium)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:var(--s-sm)}
+@media (max-width:640px){.grid2{grid-template-columns:1fr}}
+
+/* Campo com label dentro (padrão do checkout) */
+.field{position:relative;display:block}
+.field input{width:100%;height:46px;padding:24px 16px 8px;background:var(--white);color:#000;border:.8px solid var(--input-border);border-radius:var(--r-sm);font:500 16px var(--font-base);box-shadow:none}
+.field input:focus{outline:2.4px solid #000}
+.field label{position:absolute;left:16px;top:13px;font-size:16px;font-weight:500;pointer-events:none;transition:all .12s ease;line-height:20px}
+.required-marker{margin-left:.25em;color:var(--brand-primary)}
+.field input:focus + label,
+.field input:not(:placeholder-shown) + label,
+.field.is-float label{top:5px;font-size:12px;line-height:14px}
+.field.date-field label{position:static;top:auto;left:auto;order:0;flex:none;font-size:14px;line-height:20px;transition:none}
+.field.date-field input[readonly]{order:1;flex:1;min-width:0;width:auto;height:auto;padding:0;border:0;border-radius:0;background:transparent;text-align:right;font-size:16px}
+.field.has-error input{border-color:var(--danger-dark)}
+.field input[readonly]{background:var(--neutral-light);cursor:default;border-color:var(--neutral-medium);color:var(--neutral-dark)}
+.field input[readonly]:focus{outline:none}
+.err{display:none;font-size:12px;color:var(--danger-dark);margin-top:4px}
+.has-error > .err,.q.has-error .err{display:block}
+.q > .err{margin-top:var(--s-xxs)}
+.field + .err{margin-bottom:0}
+
+/* Perguntas de múltipla escolha */
+.q{border:0;margin:0 0 var(--s-lg);padding:0 0 var(--s-lg);border-bottom:.8px solid var(--neutral-medium);min-width:0}
+.q:last-child{margin-bottom:0;padding-bottom:0;border-bottom:0}
+.q legend{padding:0;margin-bottom:var(--s-sm);font-weight:700;font-size:16px;line-height:1.3}
+.opts{display:grid;grid-template-columns:1fr;gap:10px}
+.opts--wide{grid-template-columns:1fr}
+.opt{display:flex;align-items:center;gap:var(--s-xs);min-height:46px;padding:12px 16px;background:var(--white);border:.8px solid var(--input-border);border-radius:var(--r-sm);cursor:pointer;font-weight:500;line-height:1.3}
+.opt__text{display:flex;flex-direction:column;gap:2px;min-width:0}
+.opt__detail{color:var(--neutral-dark);font-size:12px;font-weight:400;line-height:1.3}
+.opt:hover{background:color-mix(in srgb,var(--brand-primary) 10%,var(--white));border-color:color-mix(in srgb,var(--brand-primary) 40%,var(--white))} /* fundo vermelho 10%, borda vermelho 40% (sobre branco) */
+.opt input{appearance:none;-webkit-appearance:none;flex:none;width:20px;height:20px;margin:0;border:1.6px solid var(--input-border);border-radius:50%;background:var(--white);display:grid;place-content:center}
+.opt input::before{content:"";width:10px;height:10px;border-radius:50%;background:var(--brand-primary);transform:scale(0);transition:transform .1s}
+.opt input:checked{border-color:var(--brand-primary)}
+.opt input:checked::before{transform:scale(1)}
+.opt:has(input:checked){background:var(--brand-primary-lightest);border-color:var(--brand-primary)}
+.opt:has(input:focus-visible){outline:2.4px solid #000}
+.q.has-error .opt{border-color:var(--danger-dark)}
+.other{margin-top:var(--s-xs);display:none}
+.other.show{display:block}
+
+/* Botões */
+.actions{display:flex;gap:var(--s-xs);flex-wrap:wrap;justify-content:flex-end}
+.btn{display:inline-flex;align-items:center;justify-content:center;height:40px;padding:8px 24px;border:.8px solid transparent;border-radius:var(--r-pill);font:500 16px var(--font-base);cursor:pointer;text-decoration:none}
+.btn--cta{background:var(--highlight-medium);border-color:var(--highlight-medium);color:var(--neutral-darkest)}
+.btn--outline{background:transparent;border-color:var(--neutral-darkest);color:var(--neutral-darkest)}
+.btn:disabled{opacity:var(--opacity-medium);cursor:not-allowed}
+.btn:focus-visible{outline:2.4px solid #000;outline-offset:2px}
+
+/* Alerta de sucesso */
+.alert{display:none;background:var(--success-light);border:.8px solid var(--success-dark);border-radius:var(--r-sm);padding:var(--s-sm);margin-bottom:var(--s-md)}
+.alert.show{display:block}
+.alert strong{display:block;color:var(--success-dark)}
+#again{margin-bottom:var(--s-md)}
+
+[hidden]{display:none!important}
+#next{margin-left:auto}
+.actions{margin-top:var(--s-xs)}
+
+/* Barra de progresso + etapas com título */
+.progress{margin:0 0 var(--s-md)}
+.progress__bar{margin-top:var(--s-sm);height:4px;background:var(--neutral-medium);border-radius:var(--r-pill);overflow:hidden}
+.progress__fill{height:100%;width:0;background:var(--brand-primary);border-radius:var(--r-pill);transition:width .25s ease}
+.steps{list-style:none;margin:0;padding:0;display:flex;justify-content:space-between;gap:var(--s-xxs)}
+.steps li{flex:1 1 0;min-width:0}
+.step{display:flex;flex-direction:column;align-items:center;gap:6px;width:100%;background:none;border:0;padding:0;font:500 12px/1.25 var(--font-base);color:var(--neutral-dark);text-align:center;cursor:default}
+.step__dot{display:none}
+.step.is-done{cursor:pointer;color:var(--neutral-darkest)}
+.step.is-current{color:var(--neutral-darkest);font-weight:700}
+.step:focus-visible{outline:2.4px solid #000;outline-offset:2px}
+.progress__text{display:none;margin:var(--s-xs) 0 0;font-weight:700;font-size:14px}
+@media (max-width:640px){
+  .layout{padding:24px 16px 40px}
+  h1{font-size:24px}
+  .card{padding:18px;border-radius:12px}
+  .card h2{font-size:18px}
+  .q{margin-bottom:24px;padding-bottom:24px}
+  .actions{display:grid;grid-template-columns:1fr 1fr}
+  .actions .btn{width:100%;min-height:48px;height:auto;padding:10px 12px}
+  #next{margin-left:0}
+  #back[hidden] + #next{grid-column:1 / -1}
+  .captcha__actions .btn{width:100%;min-height:48px;height:auto}
+  .steps{display:none}
+  .progress__text{display:block}
+}
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="site-header__in">
+    <a class="brand" href="#">
+      <img class="brand__logo" src="logo-Claro-White.webp" alt="Claro">
+    </a>
+    <span class="header-version">Versão 2</span>
+  </div>
+</header>
+
+<div class="layout">
+  <main>
+    <h1>Abordagem de Cliente</h1>
+    <div class="page-head">
+      <p class="lead">Preencha com os dados informados pelo cliente durante a abordagem.</p>
+      <div class="field is-float date-field">
+        <input id="data" type="text" placeholder=" " readonly tabindex="-1" aria-readonly="true">
+        <label for="data">Data da pesquisa</label>
+      </div>
+    </div>
+
+    <section class="captcha" id="captcha-step" aria-labelledby="captcha-title">
+      <div class="captcha__panel">
+        <h2 class="captcha__title" id="captcha-title">Verificação de segurança</h2>
+        <canvas class="captcha__image" id="captcha-image" width="320" height="96" role="img" aria-label="Imagem com cinco caracteres de verificação">Seu navegador não suporta imagens de verificação.</canvas>
+        <button type="button" class="captcha__refresh" id="captcha-refresh" aria-label="Gerar novos caracteres">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17.65 6.35A7.95 7.95 0 0 0 12 4a8 8 0 0 0-7.93 7h2.02A6 6 0 0 1 16.24 7.76L13 11h7V4l-2.35 2.35ZM18 13a6 6 0 0 1-10.24 3.24L11 13H4v7l2.35-2.35A7.95 7.95 0 0 0 12 20a8 8 0 0 0 7.93-7H18Z"/></svg>
+          <span>Não consigo visualizar</span>
+        </button>
+        <label class="captcha__label" for="captcha-answer">Digite o texto que aparecer na imagem</label>
+        <input class="captcha__input" id="captcha-answer" type="text" maxlength="5" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-describedby="captcha-feedback">
+        <p class="captcha__feedback" id="captcha-feedback" role="alert" hidden></p>
+        <div class="captcha__actions">
+          <button type="button" class="btn btn--cta" id="captcha-continue">Continuar</button>
+        </div>
+      </div>
+    </section>
+
+    <div class="alert" id="ok" role="status">
+      <strong>Pesquisa registrada!</strong>
+      Os dados foram capturados neste protótipo (ainda sem envio a um servidor).
+    </div>
+    <button type="button" class="btn btn--cta" id="again" hidden>Registrar nova pesquisa</button>
+
+    <form id="survey" novalidate hidden>
+      <div class="progress" id="progress">
+        <ol class="steps" id="steps"></ol>
+        <p class="progress__text" id="ptext"></p>
+        <div class="progress__bar" role="progressbar" aria-label="Progresso da pesquisa" aria-valuemin="1" aria-valuemax="5" aria-valuenow="1"><div class="progress__fill" id="fill"></div></div>
+      </div>
+      <div class="secure"><span>Campos obrigatórios *</span></div>
+      <div id="cards"></div>
+      <div class="actions">
+        <button type="button" class="btn btn--outline" id="back" hidden>Voltar</button>
+        <button type="button" class="btn btn--cta" id="next">Continuar</button>
+      </div>
+    </form>
+  </main>
+</div>
+
+<script>
+const FAIXAS = ["De R$ 50 à R$ 80","De R$ 80 à R$ 100","De R$ 100 à R$ 120","De R$ 120 à R$ 150","Acima de R$ 150","Não me lembro"];
+const SIMNAOSEI = ["Sim","Não","Não sei"];
+
+/* Esquema da pesquisa: o tipo do input segue as possibilidades de resposta */
+const SCHEMA = [
+  { title:"Identificação", layout:"grid2", items:[
+    { id:"vendedor_nome", type:"text", label:"Nome do vendedor*", autocomplete:"off" },
+    { id:"vendedor_cpf",  type:"cpf",  label:"CPF do vendedor*" },
+  ]},
+  { title:"Cliente", layout:"grid2", items:[
+    { id:"cliente_nome",  type:"text", label:"Nome do cliente*", autocomplete:"off" },
+    { id:"cliente_cpf",   type:"cpf",  label:"CPF do cliente*" },
+  ]},
+  { title:"Internet residencial", items:[
+    { id:"res_operadora", type:"radio", q:"Qual a sua operadora de internet residencial?*",
+      options:["Claro","Vivo","TIM","Provedor de Internet ISP Regional"], other:true, wide:true },
+    { id:"res_valor", type:"radio", q:"Quanto você paga hoje de internet residencial?*", options:FAIXAS, wide:true },
+    { id:"res_fidel", type:"radio", q:"Ainda tem fidelização/multa no plano atual de internet residencial?*", options:SIMNAOSEI },
+  ]},
+  { title:"Telefonia móvel (celular)", items:[
+    { id:"mov_operadora", type:"radio", q:"Qual a sua operadora de internet de telefonia móvel (celular)?*",
+      options:["Claro","Vivo","TIM","Provedor de Internet MVNO (Mobile Virtual Network Operator ou Operadora Móvel Virtual)"], other:true, wide:true },
+    { id:"mov_valor", type:"radio", q:"Quanto você paga hoje de internet de telefonia móvel (celular)?*", options:FAIXAS },
+    { id:"mov_fidel", type:"radio", q:"Ainda tem fidelização/multa no plano atual de internet de telefonia móvel (celular)?*", options:SIMNAOSEI },
+  ]},
+  { title:"Ofertas", items:[
+    { id:"interesse", type:"radio", q:"Tem interesse em receber ofertas da Claro?*", options:["Sim","Não"] },
+  ]},
+];
+
+const MSG = "Por favor, preencha este campo corretamente.";
+const $ = (s,r=document)=>r.querySelector(s);
+const esc = s=>s.replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const requiredText = s=>s.endsWith("*")?`${esc(s.slice(0,-1))} <span class="required-marker">*</span>`:esc(s);
+
+function render(){
+  $("#cards").innerHTML = SCHEMA.map((sec,i)=>`
+    <section class="card" ${i?"hidden":""}><h2>${sec.title}</h2>
+      <div class="${sec.layout||""}">${sec.items.map(it=>it.type==="radio"?radio(it):field(it)).join("")}</div>
+    </section>`).join("");
+}
+function field(it){
+  const isDate = it.type==="date";
+  return `<div class="field-wrap" data-id="${it.id}">
+    <div class="field ${isDate?"is-float":""}">
+      <input id="${it.id}" name="${it.id}" type="text" placeholder=" "
+        ${isDate?'readonly tabindex="-1" aria-readonly="true"':""}
+        ${it.type==="cpf"?'inputmode="numeric" maxlength="14"':""} autocomplete="${it.autocomplete||"off"}">
+      <label for="${it.id}">${requiredText(it.label)}</label>
+    </div>
+    <div class="err">${MSG}</div></div>`;
+}
+function radio(it){
+  const opts = it.options.map(o=>{
+    const detailStart=o.indexOf(" (");
+    const label=detailStart<0?o:o.slice(0,detailStart);
+    const detail=detailStart<0?"":o.slice(detailStart+1);
+    return `<label class="opt"><input type="radio" name="${it.id}" value="${esc(o)}"><span class="opt__text"><span>${esc(label)}</span>${detail?`<small class="opt__detail">${esc(detail)}</small>`:""}</span></label>`;
+  }).join("");
+  const other = it.other ? `
+    <label class="opt"><input type="radio" name="${it.id}" value="__outro"><span>Outro:</span></label>` : "";
+  const otherInput = it.other ? `
+    <div class="other" id="${it.id}_other_wrap"><div class="field-wrap" data-id="${it.id}_other">
+      <div class="field"><input id="${it.id}_other" name="${it.id}_other" type="text" placeholder=" " autocomplete="off">
+        <label for="${it.id}_other">${requiredText("Qual?*")}</label></div><div class="err">${MSG}</div></div></div>` : "";
+      return `<fieldset class="q" data-id="${it.id}"><legend>${requiredText(it.q)}</legend>
+    <div class="opts ${it.wide?"opts--wide":""}">${opts}${other}</div>${otherInput}
+    <div class="err">Selecione uma opção.</div></fieldset>`;
+}
+
+/* CPF */
+const maskCpf = v=>{v=v.replace(/\D/g,"").slice(0,11);return v.replace(/(\d{3})(\d)/,"$1.$2").replace(/(\d{3})(\d)/,"$1.$2").replace(/(\d{3})(\d{1,2})$/,"$1-$2");};
+function validCpf(raw){
+  const c=raw.replace(/\D/g,""); if(c.length!==11||/^(\d)\1+$/.test(c))return false;
+  for(let t=9;t<11;t++){let s=0;for(let i=0;i<t;i++)s+=+c[i]*(t+1-i);const d=(s*10)%11%10;if(d!==+c[t])return false;}
+  return true;
+}
+
+function setErr(el,bad){ el.classList.toggle("has-error",bad); const f=el.querySelector(".field"); if(f)f.classList.toggle("has-error",bad); }
+
+function checkField(it){
+  const wrap=$(`[data-id="${it.id}"]`); const v=$("#"+it.id).value.trim();
+  const ok = it.type==="cpf" ? validCpf(v) : v.length>=(it.type==="text"?2:1);
+  setErr(wrap,!ok); return ok;
+}
+function checkRadio(it){
+  const fs=$(`.q[data-id="${it.id}"]`); const sel=fs.querySelector("input[type=radio]:checked");
+  let ok=!!sel;
+  if(sel && sel.value==="__outro"){
+    const o=$("#"+it.id+"_other"); const good=o.value.trim().length>0;
+    setErr($(`[data-id="${it.id}_other"]`),!good); ok=good;
+  }
+  fs.classList.toggle("has-error",!sel); return ok;
+}
+
+function bind(){
+  const all=SCHEMA.flatMap(s=>s.items);
+  all.forEach(it=>{
+    if(it.type==="radio"){
+      document.querySelectorAll(`input[name="${it.id}"]`).forEach(r=>r.addEventListener("change",()=>{
+        const show=r.value==="__outro"&&r.checked;
+        if(it.other){ $("#"+it.id+"_other_wrap").classList.toggle("show",$(`input[name="${it.id}"]:checked`).value==="__outro"); }
+        checkRadio(it);
+      }));
+      if(it.other)$("#"+it.id+"_other").addEventListener("blur",()=>checkRadio(it));
+    } else {
+      const el=$("#"+it.id);
+      if(it.type==="cpf")el.addEventListener("input",()=>{el.value=maskCpf(el.value)});
+      el.addEventListener("blur",()=>checkField(it));
+      el.addEventListener("input",()=>{ if($(`[data-id="${it.id}"]`).classList.contains("has-error"))checkField(it); });
+    }
+  });
+  /* PROTÓTIPO: ao focar/clicar num campo de texto vazio, preenche com dado fictício.
+     Para desligar na versão final, basta DEMO_FILL=false. */
+  const DEMO_FILL=true;
+  const pickOne=a=>a[Math.floor(Math.random()*a.length)];
+  const DEMO={
+    vendedor_nome:["Mariana Alves","Rafael Costa","Juliana Ramos","Bruno Nogueira"],
+    cliente_nome:["Carlos Eduardo Lima","Patrícia Gomes","Fernando Duarte","Aline Moreira"],
+    outro:["Fibra Local Telecom","Conecta Mais Provedor","NetRápida Regional"]
+  };
+  function fakeCpf(){ /* CPF fictício com dígitos verificadores válidos */
+    let n; do{ n=Array.from({length:9},()=>Math.floor(Math.random()*10)); }while(n.every(x=>x===n[0]));
+    for(let t=9;t<11;t++){let s=0;for(let i=0;i<t;i++)s+=n[i]*(t+1-i);n.push((s*10)%11%10);}
+    return maskCpf(n.join(""));
+  }
+  if(DEMO_FILL){
+    const fill=(el,make,after)=>el.addEventListener("focus",()=>{
+      if(el.readOnly||el.value.trim())return;
+      el.value=make(); el.dispatchEvent(new Event("input",{bubbles:true})); if(after)after();
+    });
+    all.forEach(it=>{
+      if(it.type==="text") fill($("#"+it.id),()=>pickOne(DEMO[it.id]||DEMO.cliente_nome),()=>checkField(it));
+      if(it.type==="cpf")  fill($("#"+it.id),fakeCpf,()=>checkField(it));
+      if(it.other)         fill($("#"+it.id+"_other"),()=>pickOne(DEMO.outro),()=>checkRadio(it));
+    });
+  }
+
+  /* Data automática: sempre "hoje" no fuso do aparelho; campo somente leitura */
+  const setToday=()=>{
+    const d=new Date(), p=n=>String(n).padStart(2,"0");
+    const el=$("#data");
+    el.value=`${p(d.getDate())}/${p(d.getMonth()+1)}/${d.getFullYear()}`;
+    el.dataset.iso=`${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}`;
+  };
+  setToday();
+
+  /* Etapas: cada seção do SCHEMA é uma página */
+  const N=SCHEMA.length; let cur=0;
+  const checkItems=items=>items.map(it=>it.type==="radio"?checkRadio(it):checkField(it));
+  const scrollFirstError=()=>{const f=document.querySelector(".card:not([hidden]) .has-error"); if(f)f.scrollIntoView({behavior:"smooth",block:"center"});};
+  const TITLE="Abordagem de Cliente";
+  const showForm=()=>{ $("#survey").style.display=""; $("#ok").classList.remove("show"); $("#again").hidden=true; };
+  const showDone=()=>{ $("#survey").style.display="none"; $("#ok").classList.add("show"); $("#again").hidden=false; document.title="Pesquisa registrada · "+TITLE; };
+
+  function goTo(i,opts={}){
+    cur=i;
+    document.title=`Etapa ${i+1} de ${N} · ${SCHEMA[i].title} – ${TITLE}`;
+    document.querySelectorAll("#cards .card").forEach((c,k)=>{c.hidden=k!==i;});
+    $("#fill").style.width=((i+1)/N*100)+"%";
+    const pb=$(".progress__bar");
+    pb.setAttribute("aria-valuenow",i+1);
+    pb.setAttribute("aria-valuetext",`Etapa ${i+1} de ${N}: ${SCHEMA[i].title}`);
+    $("#ptext").textContent=`Etapa ${i+1} de ${N} · ${SCHEMA[i].title}`;
+    $("#steps").innerHTML=SCHEMA.map((s,k)=>`<li><button type="button" class="step ${k<i?"is-done":k===i?"is-current":""}" data-go="${k}" ${k>i?"disabled":""} ${k===i?'aria-current="step"':""}><span class="step__dot">${k<i?"✓":k+1}</span><span class="step__label">${s.title}</span></button></li>`).join("");
+    $("#back").hidden=i===0;
+    $("#next").textContent=i===N-1?"Enviar pesquisa":"Continuar";
+    if(opts.scroll!==false)$("#progress").scrollIntoView({behavior:"smooth",block:"start"});
+    if(opts.focus!==false){ /* leitores de tela: anuncia o título da nova etapa */
+      const h=document.querySelector("#cards .card:not([hidden]) h2");
+      if(h){ h.tabIndex=-1; h.focus({preventScroll:true}); }
+    }
+  }
+  $("#steps").addEventListener("click",e=>{const b=e.target.closest("[data-go]"); if(b&&!b.disabled&&+b.dataset.go!==cur)goTo(+b.dataset.go);});
+  $("#back").addEventListener("click",()=>goTo(cur-1));
+
+  const CAPTCHA_CHARS="ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let captchaCode="";
+  function drawCaptcha(){
+    const canvas=$("#captcha-image"), ctx=canvas.getContext("2d");
+    const {width,height}=canvas;
+    ctx.fillStyle="#111"; ctx.fillRect(0,0,width,height);
+    for(let i=0;i<10;i++){
+      ctx.beginPath();
+      ctx.strokeStyle=i%2?"rgba(130,255,55,.35)":"rgba(255,199,34,.35)";
+      ctx.lineWidth=1+Math.random()*2;
+      ctx.moveTo(Math.random()*width,Math.random()*height);
+      ctx.bezierCurveTo(Math.random()*width,Math.random()*height,Math.random()*width,Math.random()*height,Math.random()*width,Math.random()*height);
+      ctx.stroke();
+    }
+    captchaCode=Array.from({length:5},()=>CAPTCHA_CHARS[Math.floor(Math.random()*CAPTCHA_CHARS.length)]).join("");
+    ctx.textBaseline="middle";
+    for(let i=0;i<captchaCode.length;i++){
+      const x=24+i*57+(Math.random()-.5)*8;
+      const y=height/2+(Math.random()-.5)*16;
+      const scaleX=.78+Math.random()*.44;
+      const scaleY=.8+Math.random()*.42;
+      const shearX=(Math.random()-.5)*.36;
+      const shearY=(Math.random()-.5)*.24;
+      ctx.save();
+      ctx.translate(x,y);
+      ctx.rotate((Math.random()-.5)*.5);
+      ctx.transform(scaleX,shearY,shearX,scaleY,0,0);
+      ctx.font=`bold ${39+Math.floor(Math.random()*10)}px Roboto, Arial, sans-serif`;
+      ctx.fillStyle=i%2?"#a7ff43":"#75f52f";
+      ctx.fillText(captchaCode[i],0,0);
+      ctx.restore();
+    }
+  }
+  const captchaAnswer=$("#captcha-answer");
+  const captchaFeedback=$("#captcha-feedback");
+  const setCaptchaFeedback=message=>{
+    captchaFeedback.textContent=message;
+    captchaFeedback.hidden=!message;
+    captchaAnswer.setAttribute("aria-invalid",message?"true":"false");
+  };
+  drawCaptcha();
+  captchaAnswer.addEventListener("click",()=>{
+    captchaAnswer.value=captchaCode;
+    setCaptchaFeedback("");
+  });
+  $("#captcha-refresh").addEventListener("click",()=>{
+    drawCaptcha(); captchaAnswer.value=""; setCaptchaFeedback(""); captchaAnswer.focus();
+  });
+  const verifyCaptcha=()=>{
+    if(captchaAnswer.value.trim().toUpperCase()!==captchaCode){
+      setCaptchaFeedback(captchaAnswer.value.trim()?"Os caracteres não correspondem. Tente novamente.":"Digite os caracteres da imagem.");
+      captchaAnswer.focus();
+      return;
+    }
+    setCaptchaFeedback("");
+    $("#captcha-step").hidden=true;
+    $("#survey").hidden=false;
+    goTo(0,{scroll:false,focus:true});
+  };
+  $("#captcha-continue").addEventListener("click",verifyCaptcha);
+  captchaAnswer.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();verifyCaptcha();}});
+
+  /* Avançar/enviar NÃO depende do evento "submit": previews em iframe isolado (sandbox sem allow-forms)
+     bloqueiam envio de formulário e o botão ficaria mudo. */
+  function advance(){
+    setToday(); /* garante a data correta se a página ficou aberta de um dia para o outro */
+    if(checkItems(SCHEMA[cur].items).includes(false)){ scrollFirstError(); return; }
+    if(cur<N-1){ goTo(cur+1); return; }
+    for(let k=0;k<N;k++){ if(checkItems(SCHEMA[k].items).includes(false)){ goTo(k,{scroll:false}); scrollFirstError(); return; } }
+    const data={ data: $("#data").dataset.iso };
+    all.forEach(it=>{
+      if(it.type==="radio"){
+        const v=$(`input[name="${it.id}"]:checked`).value;
+        data[it.id]= v==="__outro" ? "Outro: "+$("#"+it.id+"_other").value.trim() : v;
+      } else data[it.id]=$("#"+it.id).value.trim();
+    });
+    console.log("Pesquisa registrada (protótipo):",data);
+    showDone(); window.scrollTo({top:0,behavior:"smooth"});
+  }
+  $("#next").addEventListener("click",advance);
+  $("#survey").addEventListener("submit",e=>{ e.preventDefault(); advance(); }); /* reserva (ex.: requestSubmit) */
+  $("#survey").addEventListener("keydown",e=>{ /* Enter num campo = Continuar */
+    if(e.key==="Enter" && e.target.tagName==="INPUT" && e.target.type!=="radio"){ e.preventDefault(); advance(); }
+  });
+  $("#survey").addEventListener("reset",()=>setTimeout(()=>{
+    document.querySelectorAll(".has-error").forEach(e=>e.classList.remove("has-error"));
+    document.querySelectorAll(".other").forEach(e=>e.classList.remove("show"));
+    setToday();
+  }));
+  $("#again").addEventListener("click",()=>{ $("#survey").reset(); showForm(); goTo(0); });
+}
+render(); bind();
+</script>
+</body>
+</html>
