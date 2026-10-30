@@ -386,6 +386,7 @@ const SCHEMA = [
     { id:"res_operadora", type:"radio", q:"Qual a sua operadora de internet residencial?*", options:["Claro","Vivo","TIM","Não sei"], other:true, wide:true, condition:"res_possui" },
     { id:"res_valor", type:"money", q:"Qual o valor da mensalidade?*", label:"Valor da mensalidade*", placeholder:"R$ 0,00", condition:"res_possui" },
     { id:"res_fidelizacao", type:"radio", q:"Possui fidelização?*", options:["Sim","Não","Não sei"], condition:"res_possui" },
+    { id:"res_pessoas", type:"radio", q:"Quantas pessoas utilizam a internet residencial?*", options:["1","2","3","4","5 ou mais"], condition:"res_possui" },
   ]},
   { title:"Telefone do Cliente", items:[
     { id:"cliente_contato_ofertas", type:"radio", q:"Deseja receber ligações ou mensagens no WhatsApp com ofertas para seu perfil?*", options:["Sim","Não"], controlsConditional:true },
@@ -427,7 +428,7 @@ function surveySummaryRows(){
     {label:"CPF",value:clientDetailsSkipped?"Não informado":valueFor("cliente_cpf")},
     {label:"CEP",value:clientDetailsSkipped?"Não informado":`${valueFor("cliente_cep")} | ${cepAddress}`},
     {label:"Móvel",value:service("mov")},
-    {label:"Residencial",value:service("res")},
+    {label:"Residencial",value:service("res")+(choiceFor("res_possui")==="Sim"?` | Pessoas: ${choiceFor("res_pessoas")}`:"")},
     {label:"Aceita contato com ofertas",value:choiceFor("cliente_contato_ofertas")},
   ];
 }
