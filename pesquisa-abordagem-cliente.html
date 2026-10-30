@@ -28,7 +28,9 @@
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
 body{margin:0;font-family:var(--font-base);font-size:16px;font-weight:400;color:var(--neutral-darkest);background:var(--white)}
-.page-frame{min-height:100vh;container-type:inline-size;container-name:page-frame}
+.page-frame{min-height:100vh;padding-bottom:calc(48px + env(safe-area-inset-bottom,0px));container-type:inline-size;container-name:page-frame}
+.site-footer{position:fixed;z-index:20;bottom:0;left:0;right:0;min-height:48px;padding:16px 24px calc(16px + env(safe-area-inset-bottom,0px));background:var(--white);color:var(--neutral-dark);font-size:12px;line-height:16px;text-align:center}
+body.preview-mobile .site-footer{width:min(390px,100%);margin-inline:auto}
 body.preview-desktop .page-frame{width:max(1024px,100%);margin:0 auto}
 body.preview-mobile{background:#eee}
 body.preview-mobile .page-frame{width:min(390px,100%);margin:0 auto;background:var(--white);box-shadow:0 0 24px rgba(0,0,0,.12)}
@@ -183,7 +185,7 @@ h1{font:700 28px/normal var(--font-highlight);margin:0 0 var(--s-xxs)}
 .btn:focus-visible{outline:2.4px solid #000;outline-offset:2px}
 
 /* Alerta de sucesso */
-.alert{display:none;background:var(--success-light);border:.8px solid var(--success-dark);border-radius:var(--r-sm);padding:var(--s-sm);margin-bottom:var(--s-md)}
+.alert{display:none;background:var(--success-light);border:.8px solid color-mix(in srgb,var(--success-dark) 30%,var(--success-light));border-radius:var(--r-sm);padding:var(--s-sm);margin-bottom:var(--s-md)}
 .alert.show{display:block}
 .alert strong{display:block;color:var(--success-dark)}
 #again{margin-bottom:var(--s-md)}
@@ -338,6 +340,7 @@ h1{font:700 28px/normal var(--font-highlight);margin:0 0 var(--s-xxs)}
       </div>
     </dialog>
   </main>
+  <footer class="site-footer">Versão CC 2.0 - 10/26</footer>
 </div>
 </div>
 
@@ -374,15 +377,15 @@ const SCHEMA = [
   ]},
   { title:"Telefonia móvel (celular)", items:[
     { id:"mov_possui", type:"radio", q:"Possui internet móvel?*", options:["Sim","Não"], serviceGate:true },
-    { id:"mov_operadora", type:"radio", q:"Qual a sua operadora de internet de telefonia móvel (celular)?*", options:["Claro","Vivo","TIM"], other:true, wide:true, condition:"mov_possui" },
+    { id:"mov_operadora", type:"radio", q:"Qual a sua operadora de internet de telefonia móvel (celular)?*", options:["Claro","Vivo","TIM","Não sei"], other:true, wide:true, condition:"mov_possui" },
     { id:"mov_valor", type:"money", q:"Qual o valor da mensalidade?*", label:"Valor da mensalidade*", placeholder:"R$ 0,00", condition:"mov_possui" },
-    { id:"mov_fidelizacao", type:"radio", q:"Possui fidelização?*", options:["Sim","Não"], condition:"mov_possui" },
+    { id:"mov_fidelizacao", type:"radio", q:"Possui fidelização?*", options:["Sim","Não","Não sei"], condition:"mov_possui" },
   ]},
   { title:"Internet residencial", items:[
     { id:"res_possui", type:"radio", q:"Possui internet residencial?*", options:["Sim","Não"], serviceGate:true },
-    { id:"res_operadora", type:"radio", q:"Qual a sua operadora de internet residencial?*", options:["Claro","Vivo","TIM"], other:true, wide:true, condition:"res_possui" },
+    { id:"res_operadora", type:"radio", q:"Qual a sua operadora de internet residencial?*", options:["Claro","Vivo","TIM","Não sei"], other:true, wide:true, condition:"res_possui" },
     { id:"res_valor", type:"money", q:"Qual o valor da mensalidade?*", label:"Valor da mensalidade*", placeholder:"R$ 0,00", condition:"res_possui" },
-    { id:"res_fidelizacao", type:"radio", q:"Possui fidelização?*", options:["Sim","Não"], condition:"res_possui" },
+    { id:"res_fidelizacao", type:"radio", q:"Possui fidelização?*", options:["Sim","Não","Não sei"], condition:"res_possui" },
   ]},
   { title:"Telefone do Cliente", items:[
     { id:"cliente_contato_ofertas", type:"radio", q:"Deseja receber ligações ou mensagens no WhatsApp com ofertas para seu perfil?*", options:["Sim","Não"], controlsConditional:true },
@@ -682,6 +685,7 @@ function bind(){
       const el=$("#"+it.id);
       if(it.type==="money"){
         $("#"+it.id+"_unknown").addEventListener("change",event=>{
+          if(event.target.checked)el.value="";
           el.readOnly=event.target.checked;
           checkField(it);
         });
