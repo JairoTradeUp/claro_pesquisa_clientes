@@ -98,7 +98,9 @@ h1{font:700 28px/normal var(--font-highlight);margin:0 0 var(--s-xxs)}
 .field input{width:100%;height:60px;padding:20px 16px;background:var(--white);color:#374151;border:.8px solid var(--input-border);border-radius:var(--r-sm);font:500 16px var(--font-base);text-align:left;box-shadow:none}
 .field input:not(:placeholder-shown):not([readonly]){padding:28px 16px 10px}
 .field.is-float input:not([readonly]){padding:28px 16px 10px}
-.field.field--money input:not([readonly]){height:48px;padding:12px 16px;text-align:left}
+.field.field--money input[type="text"]{height:48px;padding:12px 16px;text-align:left}
+.money-unknown{display:flex;align-items:center;gap:var(--s-xxs);margin-top:var(--s-xs);font-size:14px;cursor:pointer}
+.money-unknown input{width:18px;height:18px;margin:0;accent-color:var(--brand-primary)}
 .field input:focus{border-color:var(--input-border-active);border-width:1.5px;outline:none}
 .autocomplete-field:focus-within{z-index:5}
 .field input[role="combobox"]{padding-right:40px;padding-left:16px}
@@ -365,7 +367,7 @@ const SCHEMA = [
   { title:"Identificação do Promotor", layout:"grid2", items:[
     { id:"vendedor_cpf",  type:"cpf",  label:"CPF do vendedor*" },
     { id:"vendedor_nome", type:"text", label:"Nome Completo*", autocomplete:"off" },
-    { id:"pdv", type:"autocomplete", label:"PDV (Ponto de Venda)*", hint:"Selecione ou pesquise o nome do PDV", options:PDV_OPTIONS, other:true, otherLabel:"Informe outro PDV*", separatorAfter:true },
+    { id:"pdv", type:"autocomplete", label:"PDV (Ponto de Venda)*", hint:"Selecione ou pesquise o nome do PDV", options:PDV_OPTIONS, other:true, otherLabel:"Informe outro PDV*" },
   ]},
   { title:"Cliente", layout:"grid2", items:[
     { id:"cliente_nome", type:"text", label:"Nome do cliente*", autocomplete:"off" },
@@ -414,7 +416,7 @@ function choiceFor(id){
 }
 function surveySummaryRows(){
   const cepAddress=clienteCepCidadeEstado||"Cidade-Estado não localizado";
-  const service=prefix=>choiceFor(prefix+"_possui")==="Não"?"Não possui":`${choiceFor(prefix+"_operadora")} | ${valueFor(prefix+"_valor")} / mês | Fidelização: ${choiceFor(prefix+"_fidelizacao")}`;
+  const service=prefix=>choiceFor(prefix+"_possui")==="Não"?"Não possui":`${choiceFor(prefix+"_operadora")} | ${$("#"+prefix+"_valor_unknown").checked?"Mensalidade: Não me lembro":valueFor(prefix+"_valor")+" / mês"} | Fidelização: ${choiceFor(prefix+"_fidelizacao")}`;
   return [
     {label:"Promotor",value:valueFor("vendedor_nome")},
     {label:"Cliente",value:valueFor("cliente_nome")},
@@ -436,7 +438,7 @@ function renderSurveySummary(view){
   target.innerHTML=`${summaryList(rows)}<div class="summary-actions"><button type="button" class="summary-edit" data-edit-survey><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m16 3 5 5-12 12-6 1 1-6Z"/><path d="m14 5 5 5"/></svg><span>Editar dados</span></button></div>`;
 }
 function field(it){
-  if(it.type==="money"&&it.q)return `<fieldset class="q"><legend>${requiredText(it.q)}</legend>${field({...it,q:null})}</fieldset>`;
+  if(it.type==="money"&&it.q)return `<fieldset class="q"><legend>${requiredText(it.q)}</legend>${field({...it,q:null})}<label class="money-unknown"><input type="checkbox" id="${it.id}_unknown" name="${it.id}_unknown"><span>Não me lembro</span></label></fieldset>`;
   const isDate = it.type==="date";
   const isFloat = isDate||!!it.placeholder;
   const divider = it.separatorBefore?'<hr class="form-divider" aria-hidden="true">':"";
@@ -558,7 +560,7 @@ function checkField(it){
     if(it.other)setErr(otherWrap,isOther&&!otherValid);
     return selected&&otherValid;
   }
-  const ok = it.type==="money" ? /^R\$\s*[\d.]+,\d{2}$/.test(v)&&Number(v.replace(/[^\d]/g,""))>0 : it.type==="cpf" ? validCpf(v) : it.type==="phone" ? validPhone(v) : it.type==="cep" ? validCep(v) : it.type==="autocomplete" ? it.options.includes(v) : v.length>=(it.type==="text"?2:1);
+  const ok = it.type==="money" ? $("#"+it.id+"_unknown").checked||(/^R\$\s*[\d.]+,\d{2}$/.test(v)&&Number(v.replace(/[^\d]/g,""))>0) : it.type==="cpf" ? validCpf(v) : it.type==="phone" ? validPhone(v) : it.type==="cep" ? validCep(v) : it.type==="autocomplete" ? it.options.includes(v) : v.length>=(it.type==="text"?2:1);
   setErr(wrap,!ok); return ok;
 }
 function checkRadio(it){
@@ -679,8 +681,12 @@ function bind(){
     } else {
       const el=$("#"+it.id);
       if(it.type==="money"){
+        $("#"+it.id+"_unknown").addEventListener("change",event=>{
+          el.readOnly=event.target.checked;
+          checkField(it);
+        });
         el.addEventListener("input",()=>{const digits=el.value.replace(/\D/g,"").slice(0,9);el.value=digits?new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"}).format(Number(digits)/100):"";});
-        el.addEventListener("click",()=>{if(!el.value.trim()){el.value="R$ 99,90";checkField(it);}});
+        el.addEventListener("click",()=>{if(!el.readOnly&&!el.value.trim()){el.value="R$ 99,90";checkField(it);}});
       }
       if(it.type==="cpf")el.addEventListener("input",()=>{el.value=maskCpf(el.value)});
       if(it.type==="cep")el.addEventListener("input",()=>{
@@ -949,7 +955,7 @@ function bind(){
       } else if(it.type==="autocomplete"){
         const selection=$("#"+it.id).dataset.selectedValue;
         data[it.id]=selection===PDV_OTHER_VALUE?$("#"+it.id+"-other").value.trim():selection;
-      } else data[it.id]=$("#"+it.id).value.trim();
+      } else data[it.id]=it.type==="money"&&$("#"+it.id+"_unknown").checked?"Não me lembro":$("#"+it.id).value.trim();
     });
     if(!withoutClientDetails)data.cliente_cep_cidade_estado=clienteCepCidadeEstado;
     console.log("Pesquisa registrada (protótipo):",data);
@@ -961,6 +967,7 @@ function bind(){
     if(e.key==="Enter" && e.target.tagName==="INPUT" && e.target.type!=="radio"){ e.preventDefault(); advance(); }
   });
   $("#survey").addEventListener("reset",()=>setTimeout(()=>{
+    all.filter(it=>it.type==="money").forEach(it=>{$("#"+it.id).readOnly=false;});
     clientDetailsSkipped=false;
     document.querySelectorAll(".has-error").forEach(e=>e.classList.remove("has-error"));
     document.querySelectorAll(".other").forEach(e=>e.classList.remove("show"));
