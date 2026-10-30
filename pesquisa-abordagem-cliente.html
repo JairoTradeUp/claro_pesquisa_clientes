@@ -91,6 +91,7 @@ h1{font:700 28px/normal var(--font-highlight);margin:0 0 var(--s-xxs)}
 .survey-fields{display:grid;gap:var(--s-md)}
 .survey-item{min-width:0}
 .survey-fields>.survey-item:not([hidden]):has(~.survey-item:not([hidden])){padding-bottom:var(--s-md);border-bottom:.8px solid var(--neutral-medium)}
+.survey-fields>.survey-item:not([hidden]):has(~.survey-item:not([hidden])):has(input[name="cliente_contato_ofertas"]){padding-bottom:0;border-bottom:0}
 .survey-item>.q{margin:0;padding:0;border-bottom:0}
 @container page-frame (max-width:640px){.grid2{grid-template-columns:1fr}}
 .form-divider{grid-column:1/-1;width:100%;margin:4px 0;border:0;border-top:1px solid var(--neutral-medium)}
@@ -297,7 +298,7 @@ h1{font:700 28px/normal var(--font-highlight);margin:0 0 var(--s-xxs)}
       <div class="progress" id="progress">
         <ol class="steps" id="steps"></ol>
         <p class="progress__text" id="ptext"></p>
-        <div class="progress__bar" role="progressbar" aria-label="Progresso da pesquisa" aria-valuemin="1" aria-valuemax="7" aria-valuenow="1"><div class="progress__fill" id="fill"></div></div>
+        <div class="progress__bar" role="progressbar" aria-label="Progresso da pesquisa" aria-valuemin="1" aria-valuemax="6" aria-valuenow="1"><div class="progress__fill" id="fill"></div></div>
       </div>
       <div class="secure"><span>Campos obrigatórios *</span></div>
       <div id="cards"></div>
@@ -388,11 +389,9 @@ const SCHEMA = [
     { id:"res_fidelizacao", type:"radio", q:"Possui fidelização?*", options:["Sim","Não","Não sei"], condition:"res_possui" },
     { id:"res_pessoas", type:"radio", q:"Quantas pessoas utilizam a internet residencial?*", options:["1","2","3","4","5 ou mais"], condition:"res_possui" },
   ]},
-  { title:"Telefone do Cliente", items:[
+  { title:"Dados do Cliente", items:[
     { id:"cliente_contato_ofertas", type:"radio", q:"Deseja receber ligações ou mensagens no WhatsApp com ofertas para seu perfil?*", options:["Sim","Não"], controlsConditional:true },
     { id:"cliente_telefone", type:"phone", label:"Telefone do cliente*", placeholder:"(00) 00000-0000", phoneHint:"Informe o telefone do cliente com DDD.", condition:"cliente_contato_ofertas" },
-  ]},
-  { title:"Dados do Cliente", layout:"grid2", items:[
     { id:"cliente_cpf", type:"cpf", label:"CPF do cliente*", instruction:"Informe o CPF do cliente para prosseguir." },
     { id:"cliente_cep", type:"cep", label:"CEP*", placeholder:"00000-000", helpLabel:"Não sei o CEP" },
   ]},
@@ -813,9 +812,8 @@ function bind(){
   const TITLE="Abordagem de Cliente";
   const showIntro=()=>{ $("#survey").hidden=true; $("#ok").classList.remove("show"); $("#again").hidden=true; $("#intro-step").hidden=false; $("#page-head").hidden=true; $("#captcha-step").hidden=true; document.title=TITLE; };
   const showDone=()=>{ $("#survey").hidden=true; $("#ok").classList.add("show"); $("#again").hidden=false; document.title="Pesquisa registrada · "+TITLE; };
-  const shouldEndEarly=()=>SCHEMA[cur].items.some(it=>it.id==="cliente_contato_ofertas")
-    ?choiceFor("cliente_contato_ofertas")==="Não"
-    :SCHEMA[cur].title==="Dados do Cliente"&&["cliente_cpf","cliente_cep"].every(id=>!$("#"+id).value.trim());
+  const shouldEndEarly=()=>SCHEMA[cur].title==="Dados do Cliente"&&(
+    choiceFor("cliente_contato_ofertas")==="Não"||["cliente_cpf","cliente_cep"].every(id=>!$("#"+id).value.trim()));
   const updateNextButton=()=>{$("#next").textContent=shouldEndEarly()?"Encerrar":cur===N-1?"Enviar pesquisa":"Continuar";};
   $("#survey").addEventListener("input",updateNextButton);
   $("#survey").addEventListener("change",updateNextButton);
@@ -932,6 +930,7 @@ function bind(){
   async function advance(){
     setToday(); /* garante a data correta se a página ficou aberta de um dia para o outro */
     if(shouldEndEarly()){
+      if(checkItems(SCHEMA[cur].items.filter(it=>!["cliente_cpf","cliente_cep"].includes(it.id))).includes(false)){scrollFirstError();return;}
       clientDetailsSkipped=true;
       goTo(SCHEMA.findIndex(section=>section.view==="review"));return;
     }
@@ -946,8 +945,8 @@ function bind(){
   function finishSurvey(withoutClientDetails=clientDetailsSkipped){
     setToday();
     for(let k=0;k<N;k++){
-      if(withoutClientDetails&&SCHEMA[k].title==="Dados do Cliente")continue;
-      if(checkItems(SCHEMA[k].items).includes(false)){goTo(k,{scroll:false});scrollFirstError();return;}
+      const items=withoutClientDetails?SCHEMA[k].items.filter(it=>!["cliente_cpf","cliente_cep"].includes(it.id)):SCHEMA[k].items;
+      if(checkItems(items).includes(false)){goTo(k,{scroll:false});scrollFirstError();return;}
     }
     const data={ data: $("#data").dataset.iso };
     all.forEach(it=>{
