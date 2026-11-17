@@ -169,6 +169,7 @@ h1{font:700 28px/normal var(--font-highlight);margin:0 0 var(--s-xxs)}
   .steps{display:none}
   .progress__text{display:block}
 }
+.select-hint{margin:0 0 var(--s-xxs);color:var(--neutral-dark);font-size:14px;line-height:1.4}
 </style>
 </head>
 <body>
@@ -219,7 +220,7 @@ h1{font:700 28px/normal var(--font-highlight);margin:0 0 var(--s-xxs)}
       <div class="progress" id="progress">
         <ol class="steps" id="steps"></ol>
         <p class="progress__text" id="ptext"></p>
-        <div class="progress__bar" role="progressbar" aria-label="Progresso da pesquisa" aria-valuemin="1" aria-valuemax="3" aria-valuenow="1"><div class="progress__fill" id="fill"></div></div>
+        <div class="progress__bar" role="progressbar" aria-label="Progresso da pesquisa" aria-valuemin="1" aria-valuemax="4" aria-valuenow="1"><div class="progress__fill" id="fill"></div></div>
       </div>
       <div class="secure"><span>Campos obrigatórios *</span></div>
       <div id="cards"></div>
@@ -234,10 +235,30 @@ h1{font:700 28px/normal var(--font-highlight);margin:0 0 var(--s-xxs)}
 </div>
 
 <script>
+const PDV_OPTIONS=[
+  "PB2R - Carrefour - Vila Guilherme",
+  "FQPX - Magazine Luiza - Jardim Frediani",
+  "N520 - Magazine Luiza - Vila Bocaina",
+  "S2LS - Lojas Americanas - Centro",
+  "QIWV - Magazine Luiza - Centro",
+  "AJQ0 - Via Varejo - Vila Rio Branco",
+  "AQU6 - Via Varejo - Parque Cocaia",
+  "47BZ - Magazine Luiza - Centro",
+  "NGL7 - Magazine Luiza - Centro",
+  "J8T4 - Via Varejo - Centro",
+  "4NPF - Lojas Americanas - Centro",
+  "VH6B - Magazine Luiza - Jardim Marilu"
+];
+const PDV_OTHER_MOCK="PDV fora da lista";
 const PDV_OTHER_VALUE="__OUTROS__";
 
 /* Esquema da pesquisa: o tipo do input segue as possibilidades de resposta */
 const SCHEMA = [
+  { title:"Identificação do Promotor", layout:"grid2", items:[
+    { id:"vendedor_cpf",  type:"cpf",  label:"CPF do vendedor*" },
+    { id:"vendedor_nome", type:"text", label:"Nome Completo*", autocomplete:"off" },
+    { id:"pdv", type:"select", label:"PDV (Ponto de Venda)*", hint:"Selecione ou pesquise o nome do PDV", options:PDV_OPTIONS, other:true, otherLabel:"Informe outro PDV*" },
+  ]},
   { title:"Conhecimento do Programa", items:[
     { id:"participacao_conhecimento", type:"radio", q:"Você sabe qual programa de reconhecimento você participa hoje?*", options:["Sim, sei o nome e como funciona","Sei que existe, mas não sei como funciona","Não sabia que participava"] },
     { id:"programa", type:"radio", q:"Sobre qual programa de reconhecimento você está respondendo?*", options:["Summit","Clube dos 100","Giga Clube"], other:true, otherOptionLabel:"Outros:", otherLabel:"Qual programa?*" },
@@ -295,8 +316,9 @@ function selectField(it,divider,dividerAfter){
         </div>
       </div>`:"";
   return `${divider}<div class="field-wrap select-wrap" data-id="${it.id}">
+    ${it.hint?`<p class="select-hint" id="${it.id}-hint">${esc(it.hint)}</p>`:""}
     <div class="field select-field">
-      <input id="${it.id}" name="${it.id}" type="text" placeholder=" " role="combobox" aria-autocomplete="list" aria-haspopup="listbox" aria-expanded="false" aria-controls="${it.id}-options" aria-required="true" autocomplete="off">
+      <input id="${it.id}" name="${it.id}" type="text" placeholder=" " role="combobox" aria-autocomplete="list" aria-haspopup="listbox" aria-expanded="false" aria-controls="${it.id}-options" ${it.hint?`aria-describedby="${it.id}-hint"`:""} aria-required="true" autocomplete="off">
       <label for="${it.id}">${requiredText(it.label)}</label>
       <div class="select-options" id="${it.id}-options" role="listbox" hidden></div>
     </div>
@@ -449,6 +471,11 @@ function bind(){
         otherInput.addEventListener("input",()=>{if(wrap.classList.contains("has-error")||$(`[data-id="${it.id}_other"]`).classList.contains("has-error"))checkField(it);});
       }
       document.addEventListener("pointerdown",event=>{if(!wrap.contains(event.target))close();});
+      $("#survey").addEventListener("reset",()=>{
+        delete el.dataset.selectedValue;
+        if(otherWrap)otherWrap.hidden=true;
+        close();
+      });
     } else if(it.type==="radio"){
       document.querySelectorAll(`input[name="${it.id}"]`).forEach(r=>r.addEventListener("change",()=>{
         const show=r.value==="__outro"&&r.checked;
@@ -642,7 +669,7 @@ function bind(){
   $("#next").addEventListener("click",advance);
   $("#survey").addEventListener("submit",e=>{ e.preventDefault(); advance(); }); /* reserva (ex.: requestSubmit) */
   $("#survey").addEventListener("keydown",e=>{ /* Enter num campo = Continuar */
-    if(e.key==="Enter" && e.target.tagName==="INPUT" && e.target.type!=="radio"){ e.preventDefault(); advance(); }
+    if(e.key==="Enter" && !e.defaultPrevented && e.target.tagName==="INPUT" && e.target.type!=="radio"){ e.preventDefault(); advance(); }
   });
   $("#survey").addEventListener("reset",()=>setTimeout(()=>{
     document.querySelectorAll(".has-error").forEach(e=>e.classList.remove("has-error"));
